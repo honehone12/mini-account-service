@@ -19,3 +19,10 @@
 
 # Go workspace file
 go.work
+
+/.env
+/Makefile
+
+/cookie.txt
+
+/scripts
