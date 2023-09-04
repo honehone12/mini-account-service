@@ -9,6 +9,7 @@ import (
 	echosession "github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 )
 
 func Run(
@@ -40,6 +41,8 @@ func Run(
 	e.GET("/", handlers.Root)
 	e.POST("/register", handlers.Register)
 	e.POST("/login", handlers.Login)
+	e.GET("/authorize", handlers.Authorize)
 
+	e.Logger.SetLevel(log.WARN)
 	e.Logger.Fatal(e.Start(listenAt))
 }

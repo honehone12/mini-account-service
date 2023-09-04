@@ -11,7 +11,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func runInternal() (
+func parseParams() (
 	string,
 	string,
 	string,
@@ -50,5 +50,5 @@ func runInternal() (
 }
 
 func Run() {
-	server.Run(runInternal())
+	server.Run(parseParams())
 }

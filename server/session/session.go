@@ -3,7 +3,6 @@ package session
 import (
 	"errors"
 	"mini-account-service/server/quick"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,7 +19,7 @@ const (
 )
 
 const (
-	CurrentSessionFuncVersion = 1
+	CurrentSessionFuncVersion uint32 = 1
 )
 
 var (
@@ -49,17 +48,6 @@ func NewSessionStroe(secret string) gorillasession.Store {
 	return gorillasession.NewCookieStore([]byte(secret))
 }
 
-func NewSessionOptions() *gorillasession.Options {
-	// these options are only for browsers
-	return &gorillasession.Options{
-		Path:     "/",
-		MaxAge:   60 * 60 * 24,
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	}
-}
-
 func Set(c echo.Context, uuid string) error {
 	sess, err := echosession.Get(sessionName, c)
 	if err != nil {
@@ -76,59 +64,63 @@ func Set(c echo.Context, uuid string) error {
 	return nil
 }
 
-func Get(c echo.Context) (string, error) {
+func Get(c echo.Context) (uint32, string, error) {
 	sess, err := echosession.Get(sessionName, c)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
 
 	version, ok := sess.Values[versionKey]
 	if !ok {
-		return "", ErrorSessionNotStored
+		return 0, "", ErrorSessionNotStored
 	}
 	versionUint, ok := version.(uint32)
 	if !ok {
-		return "", ErrorSessionParseError
+		return 0, "", ErrorSessionParseError
 	}
 	if versionUint != CurrentSessionFuncVersion {
-		return "", ErrorSessionVersionMissMatch
+		return 0, "", ErrorSessionVersionMissMatch
 	}
 
 	createdAt, ok := sess.Values[createdAtKey]
 	if !ok {
-		return "", ErrorSessionNotStored
+		return 0, "", ErrorSessionNotStored
 	}
 	expiration, ok := createdAt.(int64)
 	if !ok {
-		return "", ErrorSessionParseError
+		return 0, "", ErrorSessionParseError
 	}
 	expiration += 60 * 60 * 24
 	if time.Now().Unix() > expiration {
-		return "", ErrorSessionExpired
+		return 0, "", ErrorSessionExpired
 	}
 
 	uuid, ok := sess.Values[uuidKey]
 	if !ok {
-		return "", ErrorSessionNotStored
+		return 0, "", ErrorSessionNotStored
 	}
 
 	uuidStr, ok := uuid.(string)
 	if !ok {
-		return "", ErrorSessionParseError
+		return 0, "", ErrorSessionParseError
 	}
 
-	return uuidStr, nil
+	return versionUint, uuidStr, nil
 }
 
 func GetAndVerify(c echo.Context) (SessionData, error) {
-	userUuid, err := Get(c)
-	if err == ErrorSessionNotStored ||
-		err == ErrorSessionExpired ||
-		err == ErrorSessionParseError {
+	sessVersion, userUuid, err := Get(c)
+	if err == ErrorSessionNotStored {
 
 		return SessionData{
 			Version: 0,
 			Status:  NotStored,
+			Uuid:    "",
+		}, err
+	} else if err == ErrorSessionExpired || err == ErrorSessionParseError {
+		return SessionData{
+			Version: 0,
+			Status:  Rejected,
 			Uuid:    "",
 		}, err
 	} else if err != nil {
@@ -148,7 +140,7 @@ func GetAndVerify(c echo.Context) (SessionData, error) {
 	}
 
 	return SessionData{
-		Version: 0,
+		Version: sessVersion,
 		Status:  Ok,
 		Uuid:    userUuid,
 	}, nil

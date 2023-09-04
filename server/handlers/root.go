@@ -26,6 +26,10 @@ type RootResponse struct {
 	Version string
 }
 
+type AuthorizeResponse struct {
+	Uuid string
+}
+
 func Root(c echo.Context) error {
 	ctx := c.(*context.Context)
 	return c.JSON(http.StatusOK, RootResponse{
@@ -73,4 +77,15 @@ func Login(c echo.Context) error {
 		return quick.ServiceError()
 	}
 	return c.NoContent(http.StatusOK)
+}
+
+func Authorize(c echo.Context) error {
+	sess, err := session.RequireSession(c)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, AuthorizeResponse{
+		Uuid: sess.Uuid,
+	})
 }

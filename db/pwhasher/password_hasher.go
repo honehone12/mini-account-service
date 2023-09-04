@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	CurrentHashFuncVersion = 1
+	CurrentHashFuncVersion uint32 = 1
 )
 
 const (
