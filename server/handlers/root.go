@@ -28,7 +28,7 @@ type RootResponse struct {
 
 type AuthorizeResponse struct {
 	Uuid      string
-	SessionId string
+	OneTimeId string
 }
 
 func Root(c echo.Context) error {
