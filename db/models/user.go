@@ -10,8 +10,8 @@ import (
 type User struct {
 	gorm.Model
 
-	Uuid  string `json:"uuid" gorm:"unique;not null;size:64"`
-	Email string `json:"email" gorm:"unique;not null;size:128"`
+	Uuid  string `gorm:"unique;not null;size:64"`
+	Email string `gorm:"unique;not null;size:128"`
 
 	LoginFuncVersion uint32 `gorm:"not null"`
 	Salt             []byte `gorm:"not null;size:64"`
