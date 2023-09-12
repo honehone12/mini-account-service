@@ -5,7 +5,9 @@ import (
 	"mini-account-service/server/context"
 	"mini-account-service/server/quick"
 	"mini-account-service/server/session"
+	"mini-account-service/server/session/onetime"
 	"net/http"
+	"net/url"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -46,11 +48,28 @@ func Register(c echo.Context) error {
 		return quick.BadRequest()
 	}
 
-	ctrl := c.(*context.Context).User()
-	if err := ctrl.Create(formData.Email, formData.Password); err != nil {
+	cc := c.(*context.Context)
+	ctrl := cc.User()
+	uuid, err := ctrl.Create(formData.Email, formData.Password)
+	if err != nil {
 		c.Logger().Error(err)
 		return quick.ServiceError()
 	}
+
+	//
+	// or move data to redis when the user logged in
+	formValues := url.Values{"uuid": {uuid}}
+	url := cc.GamedataService + "/init"
+	res, err := http.PostForm(url, formValues)
+	if err != nil {
+		c.Logger().Error(err)
+		return quick.ServiceError()
+	} else if res.StatusCode != http.StatusOK {
+		c.Logger().Fatalf("handling status code %d not implemented", res.StatusCode)
+		return quick.ServiceError()
+	}
+	defer res.Body.Close()
+	//
 
 	return c.NoContent(http.StatusOK)
 }
@@ -83,8 +102,30 @@ func Login(c echo.Context) error {
 func Authorize(c echo.Context) error {
 	sess, err := session.RequireSession(c)
 	if err != nil {
-		return err
+		c.Logger().Warn(err)
+		return quick.BadRequest()
 	}
+
+	onetimeId, err := onetime.New()
+	if err != nil {
+		c.Logger().Error(err)
+		return quick.ServiceError()
+	}
+
+	formValues := url.Values{
+		"uuid": {sess.Uuid},
+		"id":   {onetimeId},
+	}
+	url := c.(*context.Context).GamedataService + "/session/set"
+	res, err := http.PostForm(url, formValues)
+	if err != nil {
+		c.Logger().Error(err)
+		return quick.ServiceError()
+	} else if res.StatusCode != http.StatusOK {
+		c.Logger().Fatalf("handling status code %d not implemented", res.StatusCode)
+		return quick.ServiceError()
+	}
+	defer res.Body.Close()
 
 	return c.JSON(http.StatusOK, AuthorizeResponse{
 		Uuid: sess.Uuid,

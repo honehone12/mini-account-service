@@ -18,14 +18,18 @@ func NewUserController(db *gorm.DB) UserController {
 	return UserController{db}
 }
 
-func (c UserController) Create(email string, password string) error {
+// returns uuid
+func (c UserController) Create(email string, password string) (string, error) {
 	user, err := models.NewUser(email, password)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	result := c.db.Create(user)
-	return result.Error
+	if result.Error != nil {
+		return "", result.Error
+	}
+	return user.Uuid, nil
 }
 
 func (c UserController) ReadByEmail(email string) (*models.User, error) {

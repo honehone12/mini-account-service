@@ -18,6 +18,7 @@ func Run(
 	listenAt string,
 	db db.Orm,
 	store gorillasession.Store,
+	gamedataServiceUrl string,
 ) {
 	e := echo.New()
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -28,6 +29,9 @@ func Run(
 				Metadata: context.Metadata{
 					Name:    name,
 					Version: version,
+				},
+				ServiceList: context.ServiceList{
+					GamedataService: gamedataServiceUrl,
 				},
 			}
 			return next(ctx)

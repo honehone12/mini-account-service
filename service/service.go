@@ -17,6 +17,7 @@ func parseParams() (
 	string,
 	db.Orm,
 	sessions.Store,
+	string,
 ) {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
@@ -43,10 +44,14 @@ func parseParams() (
 	if len(secret) == 0 {
 		log.Fatal("env param SESSION_SECRET is empty")
 	}
+	gameData := os.Getenv("GAMEDATA_SERVICE_URL")
+	if len(gameData) == 0 {
+		log.Fatal("env param GAMEDATA_SERVICE_URL is empty")
+	}
 
 	store := session.NewSessionStroe(secret)
 
-	return name, ver, at, orm, store
+	return name, ver, at, orm, store, gameData
 }
 
 func Run() {
