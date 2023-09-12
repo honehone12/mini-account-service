@@ -59,13 +59,13 @@ func Register(c echo.Context) error {
 	//
 	// or move data to redis when the user logged in
 	formValues := url.Values{"uuid": {uuid}}
-	url := cc.GamedataService + "/init"
+	url := cc.GamedataService + "/jewel/init"
 	res, err := http.PostForm(url, formValues)
 	if err != nil {
 		c.Logger().Error(err)
 		return quick.ServiceError()
 	} else if res.StatusCode != http.StatusOK {
-		c.Logger().Fatalf("handling status code %d not implemented", res.StatusCode)
+		c.Logger().Error(quick.ErrorStatusCodeNotOk(res.StatusCode))
 		return quick.ServiceError()
 	}
 	defer res.Body.Close()
@@ -122,12 +122,13 @@ func Authorize(c echo.Context) error {
 		c.Logger().Error(err)
 		return quick.ServiceError()
 	} else if res.StatusCode != http.StatusOK {
-		c.Logger().Fatalf("handling status code %d not implemented", res.StatusCode)
+		c.Logger().Error(quick.ErrorStatusCodeNotOk(res.StatusCode))
 		return quick.ServiceError()
 	}
 	defer res.Body.Close()
 
 	return c.JSON(http.StatusOK, AuthorizeResponse{
-		Uuid: sess.Uuid,
+		Uuid:      sess.Uuid,
+		OneTimeId: onetimeId,
 	})
 }

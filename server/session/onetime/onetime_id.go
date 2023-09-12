@@ -15,6 +15,6 @@ func New() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	id := base64.StdEncoding.EncodeToString(buff)
+	id := base64.URLEncoding.EncodeToString(buff)
 	return id, nil
 }
